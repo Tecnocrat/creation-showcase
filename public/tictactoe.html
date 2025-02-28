@@ -12,12 +12,8 @@
       padding: 20px;
       margin: 0;
     }
-    h2 {
-      text-shadow: 0 0 10px #79ffe1;
-    }
-    .controls {
-      margin-bottom: 20px;
-    }
+    h2 { text-shadow: 0 0 10px #79ffe1; }
+    .controls { margin-bottom: 20px; }
     button {
       background: rgba(121, 255, 225, 0.2);
       border: 1px solid #79ffe1;
@@ -46,9 +42,36 @@
       font-size: 24px;
       padding: 0;
     }
-    #status {
-      margin: 15px 0;
-      font-size: 18px;
+    #status { margin: 15px 0; font-size: 18px; }
+    #message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border: 2px solid #79ffe1;
+      font-size: 24px;
+      text-shadow: 0 0 10px #79ffe1;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      z-index: 10;
+    }
+    #leaderboard {
+      margin-top: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border: 1px solid #79ffe1;
+      border-radius: 5px;
+      display: none;
+    }
+    #leaderboard table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #leaderboard th, #leaderboard td {
+      padding: 5px;
+      border: 1px solid #79ffe1;
     }
   </style>
 </head>
@@ -61,12 +84,22 @@
   </div>
   <div id="status">Choose a mode to start</div>
   <div class="board" id="board"></div>
+  <div id="message"></div>
+  <div id="leaderboard">
+    <h3>Leaderboard</h3>
+    <table id="leaderboard-table"></table>
+  </div>
   <script>
     let board = Array(9).fill(null);
     let isXNext = true;
     let gameMode = null;
+    let playerX = '';
+    let playerO = '';
     const boardDiv = document.getElementById('board');
     const statusDiv = document.getElementById('status');
+    const messageDiv = document.getElementById('message');
+    const leaderboardDiv = document.getElementById('leaderboard');
+    const leaderboardTable = document.getElementById('leaderboard-table');
 
     function initBoard() {
       boardDiv.innerHTML = '';
@@ -77,22 +110,42 @@
       }
     }
 
+    function showMessage(text, duration) {
+      messageDiv.textContent = text;
+      messageDiv.style.opacity = '1';
+      setTimeout(() => {
+        messageDiv.style.opacity = '0';
+      }, duration);
+    }
+
     function startGame(mode) {
       gameMode = mode;
+      if (mode === 'head-to-head') {
+        playerX = prompt('Enter Player X name:') || 'Player X';
+        playerO = prompt('Enter Player O name:') || 'Player O';
+      } else {
+        playerX = prompt('Enter your name:') || 'Player';
+        playerO = 'AI';
+      }
       board = Array(9).fill(null);
       isXNext = true;
       initBoard();
       renderBoard();
-      statusDiv.textContent = `Player X's turn`;
+      showMessage('Start!', 1000);
+      statusDiv.textContent = `${playerX}'s turn (X)`;
+      leaderboardDiv.style.display = 'none';
     }
 
     function resetGame() {
       gameMode = null;
       board = Array(9).fill(null);
       isXNext = true;
+      playerX = '';
+      playerO = '';
       initBoard();
       renderBoard();
       statusDiv.textContent = 'Choose a mode to start';
+      leaderboardDiv.style.display = 'none';
     }
 
     function handleClick(index) {
@@ -104,18 +157,25 @@
 
       const winner = calculateWinner(board);
       if (winner) {
-        statusDiv.textContent = `Winner: ${winner}`;
+        const winnerName = winner === 'X' ? playerX : playerO;
+        showMessage(`Winner: ${winnerName}!`, 2000);
+        statusDiv.textContent = `Game Over`;
+        saveScore(winnerName);
+        setTimeout(showLeaderboard, 2000);
         return;
       }
       if (!board.includes(null)) {
-        statusDiv.textContent = "It's a tie!";
+        showMessage("It's a tie!", 2000);
+        statusDiv.textContent = `Game Over`;
+        saveScore('Tie');
+        setTimeout(showLeaderboard, 2000);
         return;
       }
 
-      statusDiv.textContent = `Player ${isXNext ? 'X' : 'O'}'s turn`;
+      statusDiv.textContent = `${isXNext ? playerX : playerO}'s turn (${isXNext ? 'X' : 'O'})`;
 
       if (gameMode === 'head-to-ai' && !isXNext) {
-        setTimeout(aiMove, 500); // Slight delay for AI move
+        setTimeout(aiMove, 500);
       }
     }
 
@@ -127,18 +187,23 @@
 
       const winner = calculateWinner(board);
       if (winner) {
-        statusDiv.textContent = `Winner: ${winner}`;
+        showMessage(`Winner: ${playerO}!`, 2000);
+        statusDiv.textContent = `Game Over`;
+        saveScore(playerO);
+        setTimeout(showLeaderboard, 2000);
         return;
       }
       if (!board.includes(null)) {
-        statusDiv.textContent = "It's a tie!";
+        showMessage("It's a tie!", 2000);
+        statusDiv.textContent = `Game Over`;
+        saveScore('Tie');
+        setTimeout(showLeaderboard, 2000);
         return;
       }
-      statusDiv.textContent = `Player X's turn`;
+      statusDiv.textContent = `${playerX}'s turn (X)`;
     }
 
     function findBestMove() {
-      // Win if possible
       for (let i = 0; i < 9; i++) {
         if (!board[i]) {
           board[i] = 'O';
@@ -149,7 +214,6 @@
           board[i] = null;
         }
       }
-      // Block if needed
       for (let i = 0; i < 9; i++) {
         if (!board[i]) {
           board[i] = 'X';
@@ -160,7 +224,6 @@
           board[i] = null;
         }
       }
-      // Random move
       const available = board.map((val, idx) => val === null ? idx : null).filter(v => v !== null);
       return available[Math.floor(Math.random() * available.length)];
     }
@@ -181,7 +244,22 @@
       return null;
     }
 
-    // Initial setup
+    async function saveScore(winner) {
+      const response = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: winner, score: winner === 'Tie' ? 0 : 1 })
+      });
+    }
+
+    async function showLeaderboard() {
+      const response = await fetch('/api/leaderboard');
+      const data = await response.json();
+      leaderboardDiv.style.display = 'block';
+      leaderboardTable.innerHTML = '<tr><th>Name</th><th>Wins</th></tr>' + 
+        data.map(entry => `<tr><td>${entry.name}</td><td>${entry.score}</td></tr>`).join('');
+    }
+
     initBoard();
   </script>
 </body>
