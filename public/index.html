@@ -7,104 +7,92 @@
 </head>
 <body>
   <div class="parallax">
-    <div class="corner top-left"></div>
-    <div class="corner top-right"></div>
-    <div class="corner bottom-left"></div>
-    <div class="corner bottom-right"></div>
+    <canvas id="bg"></canvas>
     <div class="content">
       <h1>NeonGrid Hub</h1>
-      <button onclick="loadApp('tictactoe')">Tic-Tac-Toe</button>
-      <button onclick="loadApp('rockpaperscissors')">Rock, Paper, Scissors</button>
+      <button onclick="loadApp('./tictactoe.html')">Tic-Tac-Toe</button>
+      <button onclick="loadApp('./rockpaperscissors.html')">Rock, Paper, Scissors</button>
       <div id="app-container"></div>
     </div>
   </div>
-  <script>
-    function loadApp(appName) {
+  <script type="module">
+    import * as THREE from '../node_modules/three/build/three.module.js';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg'), alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // Ambient Light
+    const ambientLight = new THREE.AmbientLight(0x79ffe1, 0.3);
+    scene.add(ambientLight);
+
+    // Point Light (Mouse-Driven)
+    const pointLight = new THREE.PointLight(0x79ffe1, 1, 100);
+    pointLight.castShadow = true;
+    pointLight.shadow.bias = -0.001;
+    scene.add(pointLight);
+
+    // 3D Objects
+    const geometryCube = new THREE.BoxGeometry(1, 1, 1);
+    const geometrySphere = new THREE.SphereGeometry(0.5, 32, 32);
+    const material = new THREE.MeshPhongMaterial({ color: 0x79ffe1, transparent: true, opacity: 0.7 });
+
+    const objects = [];
+    for (let i = 0; i < 20; i++) {
+      const type = Math.random() > 0.5 ? geometryCube : geometrySphere;
+      const mesh = new THREE.Mesh(type, material);
+      mesh.position.set(
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 10
+      );
+      mesh.rotation.set(Math.random() * 2, Math.random() * 2, Math.random() * 2);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      objects.push(mesh);
+      scene.add(mesh);
+    }
+
+    camera.position.z = 15;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      objects.forEach(obj => {
+        obj.rotation.x += 0.01;
+        obj.rotation.y += 0.01;
+      });
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Mouse Movement
+    document.addEventListener('mousemove', (e) => {
+      const x = (e.clientX / window.innerWidth) * 20 - 10;
+      const y = -(e.clientY / window.innerHeight) * 20 + 10;
+      pointLight.position.set(x, y, 10);
+    });
+
+    // Responsive Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Load Apps
+    function loadApp(url) {
       const container = document.getElementById('app-container');
       container.style.display = 'block';
-      if (appName === 'tictactoe') {
-        container.innerHTML = `
-          <h2>Tic-Tac-Toe</h2>
-          <div id="status">Next player: X</div>
-          <div class="board" id="board" style="display: grid; grid-template-columns: repeat(3, 50px);"></div>
-          <p><a href="https://github.com/tecnocrat/creation-showcase/blob/main/public/tictactoe.html" target="_blank">Code</a> | <a href="./tutorials/tictactoe.pdf">Tutorial</a> | <button onclick="closeApp()">Close</button></p>
-        `;
-        startTicTacToe();
-      } else if (appName === 'rockpaperscissors') {
-        container.innerHTML = `
-          <h2>Rock, Paper, Scissors</h2>
-          <div class="choices">
-            <button onclick="play('rock')">Rock</button>
-            <button onclick="play('paper')">Paper</button>
-            <button onclick="play('scissors')">Scissors</button>
-          </div>
-          <div id="result"></div>
-          <p><a href="https://github.com/tecnocrat/creation-showcase/blob/main/public/rockpaperscissors.html" target="_blank">Code</a> | <a href="./tutorials/rockpaperscissors.pdf">Tutorial</a> | <button onclick="closeApp()">Close</button></p>
-        `;
-      }
+      container.innerHTML = `<iframe src="${url}" width="100%" height="400px" style="border: none;"></iframe><button onclick="closeApp()">Close</button>`;
     }
 
     function closeApp() {
-      document.getElementById('app-container').style.display = 'none';
-      document.getElementById('app-container').innerHTML = '';
-    }
-
-    function startTicTacToe() {
-      let board = Array(9).fill(null);
-      let isXNext = true;
-      const boardDiv = document.getElementById('board');
-      const statusDiv = document.getElementById('status');
-      for (let i = 0; i < 9; i++) {
-        const btn = document.createElement('button');
-        btn.style.width = '50px';
-        btn.style.height = '50px';
-        btn.style.fontSize = '20px';
-        btn.style.background = 'rgba(121, 255, 225, 0.2)';
-        btn.style.border = '1px solid #79ffe1';
-        btn.style.color = '#79ffe1';
-        btn.addEventListener('click', () => handleClick(i));
-        boardDiv.appendChild(btn);
-      }
-      function handleClick(index) {
-        if (board[index] || calculateWinner(board)) return;
-        board[index] = isXNext ? 'X' : 'O';
-        isXNext = !isXNext;
-        renderBoard();
-        const winner = calculateWinner(board);
-        statusDiv.textContent = winner ? `Winner: ${winner}` : `Next player: ${isXNext ? 'X' : 'O'}`;
-      }
-      function renderBoard() {
-        const buttons = boardDiv.getElementsByTagName('button');
-        for (let i = 0; i < buttons.length; i++) {
-          buttons[i].textContent = board[i];
-        }
-      }
-      function calculateWinner(squares) {
-        const lines = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
-        for (let line of lines) {
-          const [a, b, c] = line;
-          if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) return squares[a];
-        }
-        return null;
-      }
-    }
-
-    function play(userChoice) {
-      const choices = ['rock', 'paper', 'scissors'];
-      const computerChoice = choices[Math.floor(Math.random() * 3)];
-      let result = '';
-      if (userChoice === computerChoice) {
-        result = "It's a tie!";
-      } else if (
-        (userChoice === 'rock' && computerChoice === 'scissors') ||
-        (userChoice === 'paper' && computerChoice === 'rock') ||
-        (userChoice === 'scissors' && computerChoice === 'paper')
-      ) {
-        result = `You win! ${userChoice} beats ${computerChoice}.`;
-      } else {
-        result = `You lose! ${computerChoice} beats ${userChoice}.`;
-      }
-      document.getElementById('result').textContent = `You chose ${userChoice}, computer chose ${computerChoice}. ${result}`;
+      const container = document.getElementById('app-container');
+      container.style.display = 'none';
+      container.innerHTML = '';
     }
   </script>
 </body>

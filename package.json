@@ -8,10 +8,19 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "express": "^4.21.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  }
+    "react-dom": "^19.0.0",
+    "three": "^0.174.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tecnocrat/creation-showcase.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tecnocrat/creation-showcase/issues"
+  },
+  "homepage": "https://github.com/tecnocrat/creation-showcase#readme",
+  "description": ""
 }
