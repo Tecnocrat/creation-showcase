@@ -12,20 +12,17 @@
   <h2>Tic-Tac-Toe</h2>
   <div id="status">Next player: X</div>
   <div class="board" id="board"></div>
-  <a href="/">Back to Showcase</a>
+  <a href="./index.html">Back to Showcase</a>
   <script>
     let board = Array(9).fill(null);
     let isXNext = true;
-
     const boardDiv = document.getElementById('board');
     const statusDiv = document.getElementById('status');
-
     for (let i = 0; i < 9; i++) {
       const btn = document.createElement('button');
       btn.addEventListener('click', () => handleClick(i));
       boardDiv.appendChild(btn);
     }
-
     function handleClick(index) {
       if (board[index] || calculateWinner(board)) return;
       board[index] = isXNext ? 'X' : 'O';
@@ -34,14 +31,12 @@
       const winner = calculateWinner(board);
       statusDiv.textContent = winner ? `Winner: ${winner}` : `Next player: ${isXNext ? 'X' : 'O'}`;
     }
-
     function renderBoard() {
       const buttons = boardDiv.getElementsByTagName('button');
       for (let i = 0; i < buttons.length; i++) {
         buttons[i].textContent = board[i];
       }
     }
-
     function calculateWinner(squares) {
       const lines = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
       for (let line of lines) {
