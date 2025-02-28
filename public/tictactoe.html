@@ -4,40 +4,174 @@
   <meta charset="UTF-8">
   <title>Tic-Tac-Toe</title>
   <style>
-    body { background: #0a0a0a; color: #79ffe1; font-family: 'Courier New', monospace; text-align: center; padding: 20px; }
-    .board { display: grid; grid-template-columns: repeat(3, 50px); justify-content: center; }
-    button { width: 50px; height: 50px; font-size: 20px; background: rgba(121, 255, 225, 0.2); border: 1px solid #79ffe1; color: #79ffe1; cursor: pointer; }
-    button:hover { background: rgba(121, 255, 225, 0.5); }
+    body {
+      background: #0a0a0a;
+      color: #79ffe1;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+    h2 {
+      text-shadow: 0 0 10px #79ffe1;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    button {
+      background: rgba(121, 255, 225, 0.2);
+      border: 1px solid #79ffe1;
+      color: #79ffe1;
+      padding: 8px 16px;
+      margin: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      background: rgba(121, 255, 225, 0.5);
+      box-shadow: 0 0 10px #79ffe1;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      gap: 5px;
+      justify-content: center;
+      margin: 0 auto;
+      width: fit-content;
+    }
+    .board button {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      padding: 0;
+    }
+    #status {
+      margin: 15px 0;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
   <h2>Tic-Tac-Toe</h2>
-  <div id="status">Next player: X</div>
+  <div class="controls">
+    <button onclick="startGame('head-to-head')">Head-to-Head</button>
+    <button onclick="startGame('head-to-ai')">Head-to-AI</button>
+    <button onclick="resetGame()">Reset</button>
+  </div>
+  <div id="status">Choose a mode to start</div>
   <div class="board" id="board"></div>
   <script>
     let board = Array(9).fill(null);
     let isXNext = true;
+    let gameMode = null;
     const boardDiv = document.getElementById('board');
     const statusDiv = document.getElementById('status');
-    for (let i = 0; i < 9; i++) {
-      const btn = document.createElement('button');
-      btn.addEventListener('click', () => handleClick(i));
-      boardDiv.appendChild(btn);
+
+    function initBoard() {
+      boardDiv.innerHTML = '';
+      for (let i = 0; i < 9; i++) {
+        const btn = document.createElement('button');
+        btn.addEventListener('click', () => handleClick(i));
+        boardDiv.appendChild(btn);
+      }
     }
+
+    function startGame(mode) {
+      gameMode = mode;
+      board = Array(9).fill(null);
+      isXNext = true;
+      initBoard();
+      renderBoard();
+      statusDiv.textContent = `Player X's turn`;
+    }
+
+    function resetGame() {
+      gameMode = null;
+      board = Array(9).fill(null);
+      isXNext = true;
+      initBoard();
+      renderBoard();
+      statusDiv.textContent = 'Choose a mode to start';
+    }
+
     function handleClick(index) {
-      if (board[index] || calculateWinner(board)) return;
+      if (!gameMode || board[index] || calculateWinner(board)) return;
+      
       board[index] = isXNext ? 'X' : 'O';
       isXNext = !isXNext;
       renderBoard();
+
       const winner = calculateWinner(board);
-      statusDiv.textContent = winner ? `Winner: ${winner}` : `Next player: ${isXNext ? 'X' : 'O'}`;
+      if (winner) {
+        statusDiv.textContent = `Winner: ${winner}`;
+        return;
+      }
+      if (!board.includes(null)) {
+        statusDiv.textContent = "It's a tie!";
+        return;
+      }
+
+      statusDiv.textContent = `Player ${isXNext ? 'X' : 'O'}'s turn`;
+
+      if (gameMode === 'head-to-ai' && !isXNext) {
+        setTimeout(aiMove, 500); // Slight delay for AI move
+      }
     }
+
+    function aiMove() {
+      const bestMove = findBestMove();
+      board[bestMove] = 'O';
+      isXNext = true;
+      renderBoard();
+
+      const winner = calculateWinner(board);
+      if (winner) {
+        statusDiv.textContent = `Winner: ${winner}`;
+        return;
+      }
+      if (!board.includes(null)) {
+        statusDiv.textContent = "It's a tie!";
+        return;
+      }
+      statusDiv.textContent = `Player X's turn`;
+    }
+
+    function findBestMove() {
+      // Win if possible
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = 'O';
+          if (calculateWinner(board) === 'O') {
+            board[i] = null;
+            return i;
+          }
+          board[i] = null;
+        }
+      }
+      // Block if needed
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = 'X';
+          if (calculateWinner(board) === 'X') {
+            board[i] = null;
+            return i;
+          }
+          board[i] = null;
+        }
+      }
+      // Random move
+      const available = board.map((val, idx) => val === null ? idx : null).filter(v => v !== null);
+      return available[Math.floor(Math.random() * available.length)];
+    }
+
     function renderBoard() {
       const buttons = boardDiv.getElementsByTagName('button');
       for (let i = 0; i < buttons.length; i++) {
         buttons[i].textContent = board[i];
       }
     }
+
     function calculateWinner(squares) {
       const lines = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
       for (let line of lines) {
@@ -46,6 +180,9 @@
       }
       return null;
     }
+
+    // Initial setup
+    initBoard();
   </script>
 </body>
 </html>
