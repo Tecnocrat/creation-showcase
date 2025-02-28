@@ -15,9 +15,8 @@
       <div id="app-container"></div>
     </div>
   </div>
-  <script type="module">
-    import * as THREE from '../node_modules/three/build/three.module.js';
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script>
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg'), alpha: true });
@@ -25,17 +24,14 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // Ambient Light
     const ambientLight = new THREE.AmbientLight(0x79ffe1, 0.3);
     scene.add(ambientLight);
 
-    // Point Light (Mouse-Driven)
     const pointLight = new THREE.PointLight(0x79ffe1, 1, 100);
     pointLight.castShadow = true;
     pointLight.shadow.bias = -0.001;
     scene.add(pointLight);
 
-    // 3D Objects
     const geometryCube = new THREE.BoxGeometry(1, 1, 1);
     const geometrySphere = new THREE.SphereGeometry(0.5, 32, 32);
     const material = new THREE.MeshPhongMaterial({ color: 0x79ffe1, transparent: true, opacity: 0.7 });
@@ -68,21 +64,18 @@
     }
     animate();
 
-    // Mouse Movement
     document.addEventListener('mousemove', (e) => {
       const x = (e.clientX / window.innerWidth) * 20 - 10;
       const y = -(e.clientY / window.innerHeight) * 20 + 10;
       pointLight.position.set(x, y, 10);
     });
 
-    // Responsive Resize
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Load Apps
     function loadApp(url) {
       const container = document.getElementById('app-container');
       container.style.display = 'block';
